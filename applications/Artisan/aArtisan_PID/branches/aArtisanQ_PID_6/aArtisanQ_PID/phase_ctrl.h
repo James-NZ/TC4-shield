@@ -83,6 +83,8 @@ void output_level_pac( uint8_t pac_level ); // call this to set output level, 0 
 // call to initialize integral cycle control
 void init_control();
 
+void icc_control();
+
 void setupTimer1();
 
 // called at each zero cross by interrupt handler

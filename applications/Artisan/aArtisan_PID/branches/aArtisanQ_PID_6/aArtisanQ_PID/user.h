@@ -21,10 +21,11 @@
 //#define ANDROID
 
 ////////////////////
-// Default control mode is Phase Angle Control for OT2 (AC fan) and ICC control for OT1 (heater)
-// Comment out PHASE_ANGLE_CONTROL to get PWM control. Fast PWM (3.922kHz) for IO3 (DC fan) and slow PWM for OT1 (heater) 
-#define PHASE_ANGLE_CONTROL
+// Default control mode is ICC control for OT1 (heater) and Phase Angle Control for OT2 (AC fan)
+// Comment out PHASE_ANGLE_CONTROL to get fast PWM (3.922kHz) for IO3 (DC fan)
+//#define PHASE_ANGLE_CONTROL
 //#define IO3_HTR // use PWM (3.922kHz) out on IO3 for heater in PHASE ANGLE CONTROL mode
+//#define SLOW_PWM // use slow PWM out on OT1 for heater if not in PHASE ANGLE CONTROL mode
 
 ////////////////////
 // LCD Options

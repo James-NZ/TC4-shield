@@ -149,11 +149,12 @@
 #include "MemoryFree.h"
 #endif
 
-#ifdef PHASE_ANGLE_CONTROL
+#ifdef SLOW_PWM
+  #include <PWM16.h> // for SSR output
+#else
   // code for integral cycle control and phase angle control
   #include "phase_ctrl.h"
 #endif
-#include <PWM16.h> // for SSR output
 // these "contributed" libraries must be installed in your sketchbook's arduino/libraries folder
 #include <cmndproc.h> // for command interpreter
 #include <thermocouple.h> // type K, type J, and type T thermocouple support
@@ -241,7 +242,7 @@ ambSensor amb( A_AMB ); // MCP9800
 filterRC fT[NC]; // filter for logged ET, BT
 filterRC fRise[NC]; // heavily filtered for calculating RoR
 filterRC fRoR[NC]; // post-filtering on RoR values
-#ifndef PHASE_ANGLE_CONTROL
+#ifdef SLOW_PWM
 PWM16 ssr;  // object for SSR output on OT1, OT2
 #endif
 PWM_IO3 pwmio3;
@@ -998,7 +999,11 @@ void outOT1() { // update output for OT1
   else {
     new_levelot1 = levelOT1;
   }
+#ifdef SLOW_PWM
   ssr.Out( new_levelot1, levelOT2 );
+#else
+  output_level_icc( new_levelot1 );
+#endif
 #endif
 
 }
@@ -1017,10 +1022,18 @@ void outOT2() { // update output for OT2
   output_level_pac( levelOT2 );
 #else // PWM Mode
   if( levelIO3 < HTR_CUTOFF_FAN_VAL ) { // if levelIO3 < cutoff value then turn off heater
+#ifdef SLOW_PWM
     ssr.Out( 0, levelOT2 );
+#else
+    output_level_icc( 0 );
+#endif
   }
   else {  // turn OT1 and OT2 back on again if levelIO3 is above cutoff value.
+#ifdef SLOW_PWM
     ssr.Out( levelOT1, levelOT2 );
+#else
+    output_level_icc( levelOT1 );
+#endif
   }
 #endif
 
@@ -1040,10 +1053,18 @@ void outIO3() { // update output for IO3
 #endif
 #else // PWM Mode
   if( levelIO3 < HTR_CUTOFF_FAN_VAL ) { // if levelIO3 < cutoff value then turn off heater on OT1
+#ifdef SLOW_PWM
     ssr.Out( 0, levelOT2 );
+#else
+    output_level_icc( 0 );
+#endif
   }
   else {  // turn OT1 and OT2 back on again if levelIO3 is above cutoff value.
+#ifdef SLOW_PWM
     ssr.Out( levelOT1, levelOT2 );
+#else
+    output_level_icc( levelOT1 );
+#endif
   }
 #endif
   float pow = 2.55 * new_levelio3;
@@ -1120,7 +1141,7 @@ void setup()
   // set up output on OT1 and OT2 and IO3
   levelOT1 = levelOT2 = 0;
   levelIO3 = 0;
-#ifndef PHASE_ANGLE_CONTROL
+#ifdef SLOW_PWM
   ssr.Setup( TIME_BASE );
 #else
   init_control();

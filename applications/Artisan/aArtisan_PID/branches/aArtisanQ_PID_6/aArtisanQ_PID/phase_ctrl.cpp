@@ -101,7 +101,17 @@ void setupTimer1() {
   TIMSK1 = 0; // disable all interrupts 
   TCCR1A =  0; // put timer1 in normal mode; output pins under sketch control
   TCCR1B = _BV(TCCR1B_CS11); // set prescaler to clk/8 (1 count = 0.5 uS)
+#ifdef PHASE_ANGLE_CONTROL
   OCR1A = 0xFFFF; // initialize output compare register A to max value
+#else
+  // Generate internal zero cross signal with Timer 1
+#ifdef FREQ50
+  OCR1A = 0x4E20; // initialize output compare register A to 10.0ms
+#else
+  OCR1A = 0x411B; // initialize output compare register A to 8.3ms
+#endif
+  TCCR1B |= _BV(TCCR1B_WGM12); // enable CTC mode
+#endif
   TIMSK1 = _BV(TIMSK1_OCIE1A); // enable interrupt on output compare A match
   TCNT1 = 0; // set the timer to zero
 }
@@ -117,7 +127,49 @@ void ISR_ZCD() {
     digitalWrite( OT_PAC, LOW ); // force output off
   // set output compare register A for delay time
   OCR1A = phase_delay[pac_output] + uint16_t(ZC_LEAD);
-  
+  icc_control();
+}
+
+// ------------------------ ISR for comparator A match
+ISR( TIMER1_COMPA_vect ) { // this gets called every time there is a match on A
+#ifdef PHASE_ANGLE_CONTROL
+  // if triac output is delaying, then
+  if( triac_state == delaying ) {  
+    triac_state = pulse_on; // indicate output pulse is active
+    if( outputEnable )
+      digitalWrite( OT_PAC, HIGH );
+    TCNT1 = 0; // reset timer count
+    OCR1A = TRIAC_PULSE_WIDTH; // start counting for pulse
+  }
+  else if( triac_state == pulse_on ){  // if triac output is on, turn it off because pulse is done
+    triac_state = disabled;
+    digitalWrite( OT_PAC, LOW );
+    TCNT1 = 0;  // reset timer count
+    OCR1A = 0xFFFF; // keep triac output off until next zero cross
+  }
+#else
+  icc_control();
+#endif
+}
+
+// initialize ICC and PAC control
+void init_control() {
+  output_level_icc( 0 );
+  output_level_pac( 0 );
+  pinMode( OT_ICC, OUTPUT );
+  pinMode( OT_PAC, OUTPUT );
+  pinMode( INT_PIN, INPUT ); // enable input on the interrupt pin
+  digitalWrite( INT_PIN, HIGH );  // enable internal pullup on the int pin
+  triac_state = disabled;
+  setupTimer1();
+#ifdef PHASE_ANGLE_CONTROL
+  attachInterrupt( EXT_INT, ISR_ZCD, FALLING );
+#else
+  outputEnable = true;
+#endif
+}
+
+void icc_control() {
   // next, handle the integral cycle control output using modified Bresenham's algorithm
   // (inspired by post on arduino.cc forum by jwatte on 10-12-2011 -- Thanks!)
   if( newN ) {
@@ -134,37 +186,6 @@ void ISR_ZCD() {
   else {
     digitalWrite( OT_ICC, LOW );
   }
-}
-
-// ------------------------ ISR for comparator A match
-ISR( TIMER1_COMPA_vect ) { // this gets called every time there is a match on A
-  // if triac output is delaying, then
-  if( triac_state == delaying ) {  
-    triac_state = pulse_on; // indicate output pulse is active
-    if( outputEnable )
-      digitalWrite( OT_PAC, HIGH );
-    TCNT1 = 0; // reset timer count
-    OCR1A = TRIAC_PULSE_WIDTH; // start counting for pulse
-  }
-  else if( triac_state == pulse_on ){  // if triac output is on, turn it off because pulse is done
-    triac_state = disabled;
-    digitalWrite( OT_PAC, LOW );
-    TCNT1 = 0;  // reset timer count
-    OCR1A = 0xFFFF; // keep triac output off until next zero cross
-  }
-}
-
-// initialize ICC and PAC control
-void init_control() {
-  output_level_icc( 0 );
-  output_level_pac( 0 );
-  pinMode( OT_ICC, OUTPUT );
-  pinMode( OT_PAC, OUTPUT );
-  pinMode( INT_PIN, INPUT ); // enable input on the interrupt pin
-  digitalWrite( INT_PIN, HIGH );  // enable internal pullup on the int pin
-  triac_state = disabled;
-  setupTimer1();
-  attachInterrupt( EXT_INT, ISR_ZCD, FALLING );
 }
 
 // call this to set phase angle control output levels, 0 to 100 
