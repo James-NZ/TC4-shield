@@ -29,8 +29,8 @@
 ////////////////////
 // LCD Options
 // Comment out non required features
-#define LCD // if output on an LCD screen is desired
-#define LCDAPTER // if the I2C LCDapter board is to be used
+//#define LCD // if output on an LCD screen is desired
+//#define LCDAPTER // if the I2C LCDapter board is to be used
 #define LCD_4x20 // if using a 4x20 LCD instead of a 2x16
 
 ////////////////////
