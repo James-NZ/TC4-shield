@@ -110,7 +110,11 @@
 #define TC_TYPE2 typeK  // thermocouple on TC2
 #define TC_TYPE3 typeK  // thermocouple on TC3
 #define TC_TYPE4 typeK  // thermocouple on TC4
-#define NC 4 // maximum number of physical channels on the TC4
+#define NC 2 // maximum number of physical channels on the TC4
+#define TC_MAX6675 // Use MAX6675 modules via SPI
+#define TC_SPI_CS 4
+#define TC_SPI_DO 12
+#define TC_SPI_CLK 13
 
 ////////////////////
 // Calibration Values

@@ -158,7 +158,11 @@
 // these "contributed" libraries must be installed in your sketchbook's arduino/libraries folder
 #include <cmndproc.h> // for command interpreter
 #include <thermocouple.h> // type K, type J, and type T thermocouple support
+#ifdef TC_MAX6675
+#include "max6675.h"
+#else
 #include <cADC.h> // MCP3424
+#endif
 
 #ifdef LCD
 #include <cLCD.h> // required only if LCD is used
@@ -237,8 +241,10 @@ boolean first;
 uint16_t looptime = 1000;
 
 // class objects
+#ifndef TC_MAX6675
 cADC adc( A_ADC ); // MCP3424
 ambSensor amb( A_AMB ); // MCP9800
+#endif
 filterRC fT[NC]; // filter for logged ET, BT
 filterRC fRise[NC]; // heavily filtered for calculating RoR
 filterRC fRoR[NC]; // post-filtering on RoR values
@@ -248,12 +254,16 @@ PWM16 ssr;  // object for SSR output on OT1, OT2
 PWM_IO3 pwmio3;
 CmndInterp ci( DELIM ); // command interpreter object
 
+#ifdef TC_MAX6675
+MAX6675 * tcmax[NC];
+#else
 // array of thermocouple types
 tcBase * tcp[4];
 TC_TYPE1 tc1;
 TC_TYPE2 tc2;
 TC_TYPE3 tc3;
 TC_TYPE4 tc4;
+#endif
 
 // ---------------------------------- LCD interface definition
 #ifdef LCD
@@ -435,6 +445,7 @@ void logger() {
 
 }
 
+#ifndef TC_MAX6675
 // --------------------------------------------------------------------------
 void get_samples() // this function talks to the amb sensor and ADC via I2C
 {
@@ -484,6 +495,43 @@ void get_samples() // this function talks to the amb sensor and ADC via I2C
   }
   first = false;
 };
+#endif
+
+#ifdef TC_MAX6675
+// --------------------------------------------------------------------------
+void get_samples() // this function talks to the TC_MAX6675 modules via SPI
+{
+  float tempF;
+  float rx;
+
+  for( uint8_t jj = 0; jj < NC; jj++ ) { // one-shot conversions on both chips
+    uint8_t k = actv[jj]; // map logical channels to physical ADC channels
+    if( k > 0 ) {
+      --k;
+
+      if( !first ) { // on first loop dont save zero values
+        ftemps_old[k] = ftemps[k]; // save old filtered temps for RoR calcs
+        ftimes_old[k] = ftimes[k]; // save old timestamps for filtered temps for RoR calcs
+      }
+      
+      ftimes[k] = millis(); // record timestamp for RoR calculations
+      //T[k] = tcmax[k]->readFahrenheit();
+      
+      // filter temperatures
+      tempF = fT[k].doFilter( T[k] * 1000.0 );  // multiply by 1000 to create some resolution for filter
+      tempF /= 1000.0; 
+
+      ftemps[k] =fRise[k].doFilter( tempF * 1000 ); // heavier filtering for RoR
+
+      if ( !first ) { // on first loop dont calc RoR
+        rx = calcRise( ftemps_old[k], ftemps[k], ftimes_old[k], ftimes[k] );
+        RoR[k] = fRoR[k].doFilter( rx / D_MULT ) * D_MULT; // perform post-filtering on RoR values
+      }
+    }
+  }
+  first = false;
+};
+#endif
 
 #ifdef LCD
 // --------------------------------------------
@@ -1080,7 +1128,13 @@ void setup()
   delay(100);
   Wire.begin(); 
   Serial.begin(BAUD);
+#ifdef TC_MAX6675
+  for( int i = 0; i < NC; i++ ) {
+    //tcmax[i] = new MAX6675(TC_SPI_CLK, TC_SPI_CS + i, TC_SPI_DO);
+  }
+#else
   amb.init( AMB_FILTER );  // initialize ambient temp filtering
+#endif
 
 #ifdef LCD
 #ifdef LCD_4x20
@@ -1115,6 +1169,7 @@ void setup()
   Serial.println(freeMemory());
 #endif
 
+#ifndef TC_MAX6675
   adc.setCal( CAL_GAIN, UV_OFFSET );
   amb.setOffset( AMB_OFFSET );
 
@@ -1127,6 +1182,7 @@ void setup()
     adc.setCal( CAL_GAIN, UV_OFFSET );
     amb.setOffset( AMB_OFFSET );
   }   
+#endif
 
   // initialize filters on all channels
   fT[0].init( ET_FILTER ); // digital filtering on ET
@@ -1163,11 +1219,13 @@ void setup()
   actv[2] = 0; // default inactive
   actv[3] = 0; // default inactive
   
+#ifndef TC_MAX6675
   // assign thermocouple types
   tcp[0] = &tc1;
   tcp[1] = &tc2;
   tcp[2] = &tc3;
   tcp[3] = &tc4;
+#endif
 
 // add active commands to the linked list in the command interpreter object
   ci.addCommand( &dwriter );
@@ -1293,6 +1351,10 @@ void loop()
     }
   #endif
 
+  #ifndef PHASE_ANGLE_CONTROL
+    dcfan.slew_fan(); // keep the fan smoothly increasing in speed
+  #endif
+
   // Update LCD if defined
   #ifdef LCD
     updateLCD();
@@ -1313,6 +1375,11 @@ void loop()
   // wait until looptiom is expired. Check serial and buttons while waiting
   while( millis() < next_loop_time ) {
     checkSerial();  // Has a command been received?
+  
+  #ifndef PHASE_ANGLE_CONTROL
+    dcfan.slew_fan(); // keep the fan smoothly increasing in speed
+  #endif
+
   #ifdef LCDAPTER
     #if not ( defined ROASTLOGGER || defined ARTISAN || defined ANDROID ) // Stops buttons being read unless in standalone mode. Added to fix crash (due to low memory?).
       checkButtons();
