@@ -515,7 +515,7 @@ void get_samples() // this function talks to the TC_MAX6675 modules via SPI
       }
       
       ftimes[k] = millis(); // record timestamp for RoR calculations
-      //T[k] = tcmax[k]->readFahrenheit();
+      T[k] = tcmax[k]->readFahrenheit();
       
       // filter temperatures
       tempF = fT[k].doFilter( T[k] * 1000.0 );  // multiply by 1000 to create some resolution for filter
