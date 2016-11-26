@@ -85,7 +85,7 @@
 
 ////////////////////
 // BAUD Rate for serial communication
-#define BAUD 19200
+#define BAUD 9600
 
 ////////////////////
 // Temperature Reading Filters
