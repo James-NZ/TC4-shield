@@ -1130,7 +1130,7 @@ void setup()
   Serial.begin(BAUD);
 #ifdef TC_MAX6675
   for( int i = 0; i < NC; i++ ) {
-    //tcmax[i] = new MAX6675(TC_SPI_CLK, TC_SPI_CS + i, TC_SPI_DO);
+    tcmax[i] = new MAX6675(TC_SPI_CLK, TC_SPI_CS + i, TC_SPI_DO);
   }
 #else
   amb.init( AMB_FILTER );  // initialize ambient temp filtering
