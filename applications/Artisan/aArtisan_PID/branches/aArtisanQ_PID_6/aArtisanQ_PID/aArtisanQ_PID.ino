@@ -150,10 +150,10 @@
 #endif
 
 #ifdef SLOW_PWM
-  #include <PWM16.h> // for SSR output
+#include <PWM16.h> // for SSR output
 #else
-  // code for integral cycle control and phase angle control
-  #include "phase_ctrl.h"
+// code for integral cycle control and phase angle control
+#include "phase_ctrl.h"
 #endif
 // these "contributed" libraries must be installed in your sketchbook's arduino/libraries folder
 #include <cmndproc.h> // for command interpreter
