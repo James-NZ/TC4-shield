@@ -1146,7 +1146,7 @@ void setup()
 #else
   init_control();
 #endif
-  pwmio3.Setup( IO3_PCORPWM, IO3_PRESCALE_8 ); // setup pmw frequency ion IO3
+  pwmio3.Setup( IO3_PCORPWM, IO3_PRESCALE_128 ); // setup pmw frequency ion IO3
 
 
 
