@@ -214,22 +214,18 @@ boolean chanCmnd::doCommand( CmndParser* pars ) {
   if( strcmp( keyword, pars->cmndName() ) == 0 ) {
     char str[2];
     uint8_t n;
-    uint8_t len = strlen( pars->paramStr(1) );
-    if( len == NC ) { // must match number of channels or take no action
-      for( int i = 0; i < len; i++ ) {
-        str[0] = pars->paramStr(1)[i]; // next character
-        str[1] = '\0'; // force it to be char[2]
-        n = atoi( str );
-        if( n <= NC ) {
-          actv[i] = n;
-        } else {
-          actv[i] = 0;
-        }
+    uint8_t len = min( strlen( pars->paramStr(1) ), NC );
+    for( int i = 0; i < len; i++ ) {
+      str[0] = pars->paramStr(1)[i]; // next character
+      str[1] = '\0'; // force it to be char[2]
+      n = atoi( str );
+      if( n <= NC ) {
+        actv[i] = n;
+      } else {
+        actv[i] = 0;
       }
-      // #ifdef ACKS_ON
       Serial.print(F("# Active channels set to "));
       Serial.println( pars->paramStr(1) );
-      // #endif
     }
     return true;
   }
