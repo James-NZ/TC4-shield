@@ -480,8 +480,12 @@ pidCmnd::pidCmnd() :
 
 // turn PID on, reset Output to avoid reset windup
 void pidCmnd::pidON() {
-     Output = 0; // turn PID output off, otherwise Iterm accumulates (this looks like a bug in Brett's code)
-     myPID.SetMode( AUTOMATIC );
+#ifdef IO3_HTR
+      Output = levelIO3; // update PID based on levelOT3 for bumpless transfer
+#else
+      Output = levelOT1; // update PID based on levelOT1 for bumpless transfer
+#endif      
+      myPID.SetMode( AUTOMATIC );
       #ifdef ACKS_ON
       Serial.println(F("# PID turned ON"));
       #endif

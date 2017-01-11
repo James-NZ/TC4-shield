@@ -1336,10 +1336,10 @@ void loop()
       Input = convertUnits( T[k] );
       myPID.Compute();  // do PID calcs
 #ifdef IO3_HTR
-      levelIO3 = Output; // update levelOT1 based on PID optput
+      levelIO3 = Output; // update levelOT3 based on PID output
       outIO3();
 #else
-      levelOT1 = Output; // update levelOT1 based on PID optput
+      levelOT1 = Output; // update levelOT1 based on PID output
       outOT1();
 #endif
       #ifdef ACKS_ON
