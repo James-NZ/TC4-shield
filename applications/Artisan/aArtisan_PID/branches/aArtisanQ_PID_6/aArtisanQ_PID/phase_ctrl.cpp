@@ -79,7 +79,7 @@ uint16_t phase_delay[101] = { // 60Hz values based on linearizing power output
 /* 90 */  4315,  4153,  3979,  3793,  3590,  3366, 3113,  2816,  2449,  1933,
 /* 100 */ 0	
 };
-#else ifdef FREQ50
+#elif defined FREQ50
 uint16_t phase_delay[101] = { // 50Hz values based on linearizing power output
 	/* 0      1      2      3      4      5      6     7      8       9 */
 /* 00 */ 20000, 17680, 17061, 16621, 16265, 15961, 15692, 15448, 15225, 15017,
@@ -158,8 +158,10 @@ void init_control() {
   output_level_pac( 0 );
   pinMode( OT_ICC, OUTPUT );
   pinMode( OT_PAC, OUTPUT );
+#ifdef PHASE_ANGLE_CONTROL
   pinMode( INT_PIN, INPUT ); // enable input on the interrupt pin
   digitalWrite( INT_PIN, HIGH );  // enable internal pullup on the int pin
+#endif
   triac_state = disabled;
   setupTimer1();
 #ifdef PHASE_ANGLE_CONTROL

@@ -56,15 +56,16 @@
 #include <WProgram.h>
 #endif
 
-#include "timer1defs.h"
 #include "user.h"
+
+#include "timer1defs.h"
 
 // define the pulse width for firing TRIAC (phase angle control)
 #define TRIAC_PULSE_WIDTH 1000 // 500 uS default
 #ifdef TRIAC_MOTOR
  #undef TRIAC_PULSE_WIDTH
  #define TRIAC_PULSE_WIDTH 4000 // 2000 uS needed for popper motor -- why?
-#else ifdef TRIAC_HEATER
+#elif defined TRIAC_HEATER
  #undef TRIAC_PULSE_WIDTH
  #define TRIAC_PULSE_WIDTH 1000 // 500 uS works for heaters
 #endif
